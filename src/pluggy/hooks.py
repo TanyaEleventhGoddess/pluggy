@@ -148,13 +148,14 @@ def varnames(func):
         try:
             func = getattr(func, "__call__", func)
         except Exception:
-            return (), ()
+            return (), (), None
 
     try:  # func MUST be a function or method here or we won't parse any args
         spec = inspect.getfullargspec(func)
     except TypeError:
-        return (), ()
+        return (), (), None
 
+    varkw = spec.varkw
     args, defaults = tuple(spec.args), spec.defaults
     if defaults:
         index = -len(defaults)
@@ -171,8 +172,7 @@ def varnames(func):
         ):
             args = args[1:]
 
-    return args, kwargs
-
+    return args, kwargs, varkw
 
 class _HookRelay:
     """ hook holder object for performing 1:N hook calls where N is the number
@@ -312,7 +312,7 @@ class _HookCaller:
 class HookImpl:
     def __init__(self, plugin, plugin_name, function, hook_impl_opts):
         self.function = function
-        self.argnames, self.kwargnames = varnames(self.function)
+        self.argnames, self.kwargnames, self.varkw = varnames(self.function)
         self.plugin = plugin
         self.opts = hook_impl_opts
         self.plugin_name = plugin_name
@@ -327,14 +327,15 @@ class HookSpec:
         self.namespace = namespace
         self.function = function = getattr(namespace, name)
         self.name = name
-        self.argnames, self.kwargnames = varnames(function)
+        self.argnames, self.kwargnames, self.varkw = varnames(function)
         self.opts = opts
         self.warn_on_impl = opts.get("warn_on_impl")
 
     def __repr__(self):
-        return "<HookSpec %r, argnames=%r, kwargnames=%r, warn_on_impl=%r>" % (
+        return "<HookSpec %r, argnames=%r, kwargnames=%r, varkw=%r, warn_on_impl=%r>" % (
             self.name,
             self.argnames,
             self.kwargnames,
+            self.varkw,
             self.warn_on_impl
         )

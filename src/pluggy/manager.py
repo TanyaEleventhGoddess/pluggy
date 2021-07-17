@@ -241,6 +241,33 @@ class PluginManager:
                 ),
             )
 
+        if hook.spec.varkw and not hookimpl.varkw:
+            raise PluginValidationError(
+                hookimpl.plugin,
+                "Plugin %r for hook %r\nhookimpl definition: %s\n"
+                "keyworded argument list declared in hookspec but "
+                "can not be found in the hookimpl"
+                % (
+                    hookimpl.plugin_name,
+                    hook.name,
+                    _formatdef(hookimpl.function),
+                ),
+            )
+        elif hook.spec.varkw and hook.spec.varkw != hookimpl.varkw:
+            raise PluginValidationError(
+                hookimpl.plugin,
+                "Plugin %r for hook %r\nhookimpl definition: %s\n"
+                "Mismatch between keyworded argument list "
+                "variables: %s, %s"
+                % (
+                    hookimpl.plugin_name,
+                    hook.name,
+                    _formatdef(hookimpl.function),
+                    hook.spec.varkw,
+                    hookimpl.varkw
+                ),
+            )
+
         if hookimpl.hookwrapper and not inspect.isgeneratorfunction(hookimpl.function):
             raise PluginValidationError(
                 hookimpl.plugin,

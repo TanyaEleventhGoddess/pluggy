@@ -19,24 +19,28 @@ def _multicall(hook_name, hook_impls, caller_kwargs, firstresult):
         teardowns = []
         try:
             for hook_impl in reversed(hook_impls):
+                args = []
+                kwargs = caller_kwargs.copy()
                 try:
-                    args = [caller_kwargs[argname] for argname in hook_impl.argnames]
+                    for argname in hook_impl.argnames:
+                        args.append(kwargs.pop(argname))
                 except KeyError:
                     for argname in hook_impl.argnames:
                         if argname not in caller_kwargs:
                             raise HookCallError(
                                 "hook call must provide argument %r" % (argname,)
                             )
+                kwargs = kwargs if hook_impl.varkw else {}
 
                 if hook_impl.hookwrapper:
                     try:
-                        gen = hook_impl.function(*args)
+                        gen = hook_impl.function(*args,**kwargs)
                         next(gen)  # first yield
                         teardowns.append(gen)
                     except StopIteration:
                         _raise_wrapfail(gen, "did not yield")
                 else:
-                    res = hook_impl.function(*args)
+                    res = hook_impl.function(*args,**kwargs)
                     if res is not None:
                         results.append(res)
                         if firstresult:  # halt further impl calls
