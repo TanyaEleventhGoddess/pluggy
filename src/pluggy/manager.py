@@ -318,6 +318,22 @@ class PluginManager:
                 count += 1
         return count
 
+    def unload_setuptools_entrypoints(self, group, name=None):
+        count = 0
+        for dist in list(importlib_metadata.distributions()):
+            for ep in dist.entry_points:
+                if (
+                    ep.group != group
+                    or (name is not None and ep.name != name)
+                    # already registered
+                ):
+                    continue
+                plugin = ep.load()
+                self.unregister(plugin, name=ep.name)
+                self._plugin_distinfo.remove((plugin, DistFacade(dist)))
+                count += 1
+        return count
+
     def list_plugin_distinfo(self):
         """ return list of distinfo/plugin tuples for all setuptools registered
         plugins. """
