@@ -48,6 +48,8 @@ class DistFacade:
     def __dir__(self):
         return sorted(dir(self._dist) + ["_dist", "project_name"])
 
+    def __eq__(self,value: DistFacade):
+        return isinstance(value,DistFacade) and self._dist._path == value._dist._path
 
 class PluginManager:
     """ Core :py:class:`.PluginManager` class which manages registration
